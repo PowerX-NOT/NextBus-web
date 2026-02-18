@@ -1,10 +1,13 @@
 import './App.css'
 
+import { useState } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import MapView from './components/MapView.jsx'
+import SearchCard from './components/SearchCard.jsx'
 
 function App() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  const [isCardExpanded, setIsCardExpanded] = useState(false)
 
   if (!apiKey) {
     return (
@@ -34,6 +37,13 @@ function App() {
             <MapView />
           </div>
         </main>
+
+        <SearchCard
+          isExpanded={isCardExpanded}
+          onExpandedChange={setIsCardExpanded}
+          onFavoritesClick={() => {}}
+          onNearbyClick={() => {}}
+        />
       </div>
     </APIProvider>
   )
