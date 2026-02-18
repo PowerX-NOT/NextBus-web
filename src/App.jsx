@@ -1,6 +1,6 @@
 import './App.css'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import MapView from './components/MapView.jsx'
 import SearchCard from './components/SearchCard.jsx'
@@ -17,19 +17,23 @@ function App() {
   const [activeDirection, setActiveDirection] = useState(0)
   const pollRef = useRef(null)
 
-  const visiblePolylines = polylines.filter((p) => {
-    if (!p) return false
-    if (p.direction === 0) return activeDirection === 0
-    if (p.direction === 1) return activeDirection === 1
-    return true
-  })
+  const visiblePolylines = useMemo(() => {
+    return polylines.filter((p) => {
+      if (!p) return false
+      if (p.direction === 0) return activeDirection === 0
+      if (p.direction === 1) return activeDirection === 1
+      return true
+    })
+  }, [activeDirection, polylines])
 
-  const visibleVehicles = vehicles.filter((v) => {
-    if (!v) return false
-    if (v.direction === 0) return activeDirection === 0
-    if (v.direction === 1) return activeDirection === 1
-    return true
-  })
+  const visibleVehicles = useMemo(() => {
+    return vehicles.filter((v) => {
+      if (!v) return false
+      if (v.direction === 0) return activeDirection === 0
+      if (v.direction === 1) return activeDirection === 1
+      return true
+    })
+  }, [activeDirection, vehicles])
 
   if (!apiKey) {
     return (

@@ -90,45 +90,157 @@ const darkMapStyle = [
 
 function MapOverlays({ polylines, vehicles }) {
   const map = useMap('nb-map')
-  const polylineRefs = useRef([])
+  const basePolylineRefs = useRef([])
+  const animPolylineRefs = useRef([])
+  const animationFrameRef = useRef(null)
 
   const visiblePolylines = useMemo(() => {
     return Array.isArray(polylines) ? polylines : []
   }, [polylines])
 
+  const distanceMeters = (a, b) => {
+    const R = 6371000
+    const toRad = (d) => (d * Math.PI) / 180
+    const lat1 = toRad(a.lat)
+    const lat2 = toRad(b.lat)
+    const dLat = lat2 - lat1
+    const dLng = toRad(b.lng - a.lng)
+
+    const sa = Math.sin(dLat / 2)
+    const sb = Math.sin(dLng / 2)
+    const h = sa * sa + Math.cos(lat1) * Math.cos(lat2) * sb * sb
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+  }
+
+  const interpolateLatLng = (a, b, t) => {
+    const lat = a.lat + (b.lat - a.lat) * t
+    const lng = a.lng + (b.lng - a.lng) * t
+    return { lat, lng }
+  }
+
+  const densifyPolyline = (points, stepMeters = 15) => {
+    if (!Array.isArray(points) || points.length < 2) return []
+    if (!(stepMeters > 0)) return points
+
+    const out = [points[0]]
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = points[i]
+      const b = points[i + 1]
+      const dist = distanceMeters(a, b)
+      if (!(dist > stepMeters)) {
+        out.push(b)
+        continue
+      }
+
+      const steps = Math.max(1, Math.floor(dist / stepMeters))
+      for (let s = 1; s <= steps; s += 1) {
+        const t = Math.min(1, Math.max(0, s / steps))
+        out.push(interpolateLatLng(a, b, t))
+      }
+    }
+
+    return out
+  }
+
+  const easeOutCubic = (t) => {
+    const x = Math.min(1, Math.max(0, t))
+    return 1 - (1 - x) * (1 - x) * (1 - x)
+  }
+
+  const easeInCirc = (t) => {
+    const x = Math.min(1, Math.max(0, t))
+    return 1 - Math.sqrt(1 - x * x)
+  }
+
+  const lerp = (a, b, t) => {
+    const x = Math.min(1, Math.max(0, t))
+    return a + (b - a) * x
+  }
+
   useEffect(() => {
     if (!map) return
     if (!window.google?.maps?.Polyline) return
 
-    for (const p of polylineRefs.current) {
-      p.setMap(null)
+    if (animationFrameRef.current) {
+      window.cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
     }
-    polylineRefs.current = []
+
+    for (const p of basePolylineRefs.current) p.setMap(null)
+    for (const p of animPolylineRefs.current) p.setMap(null)
+    basePolylineRefs.current = []
+    animPolylineRefs.current = []
+
+    const durationMs = 3000
+    const holdMs = 120
+    const cycleMs = durationMs + holdMs
+    const created = []
 
     for (const pl of visiblePolylines) {
       if (!pl?.points?.length) continue
       const direction = Number(pl.direction)
-      const strokeColor = direction === 1 ? '#ef4444' : '#3b82f6'
+      const color = direction === 1 ? '#E53935' : '#1E88E5'
 
-      const polyline = new window.google.maps.Polyline({
-        path: pl.points,
+      const densified = densifyPolyline(pl.points, 15)
+      if (densified.length < 2) continue
+
+      const basePolyline = new window.google.maps.Polyline({
+        path: densified,
         geodesic: true,
-        strokeColor,
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
+        strokeColor: color,
+        strokeOpacity: 0,
+        strokeWeight: 6,
+        clickable: false,
+        zIndex: 2,
+      })
+
+      const animPolyline = new window.google.maps.Polyline({
+        path: densified.slice(0, 2),
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 1,
+        strokeWeight: 6,
         clickable: false,
         zIndex: 3,
       })
 
-      polyline.setMap(map)
-      polylineRefs.current.push(polyline)
+      basePolyline.setMap(map)
+      animPolyline.setMap(map)
+      basePolylineRefs.current.push(basePolyline)
+      animPolylineRefs.current.push(animPolyline)
+      created.push({ animPolyline, basePolyline, points: densified })
+    }
+
+    if (created.length) {
+      const start = performance.now()
+      const tick = (now) => {
+        const elapsedInCycle = (now - start) % cycleMs
+        const rawProgress = Math.min(1, elapsedInCycle / durationMs)
+        const easedProgress = easeOutCubic(rawProgress)
+        const bgAlpha = rawProgress < 0.001 ? 0 : lerp(0.3, 1.0, easeInCirc(rawProgress))
+
+        for (const item of created) {
+          const n = item.points.length
+          const idx = Math.max(2, Math.min(n, 1 + Math.floor(easedProgress * (n - 1))))
+          item.animPolyline.setPath(item.points.slice(0, idx))
+          item.basePolyline.setOptions({ strokeOpacity: bgAlpha })
+        }
+        animationFrameRef.current = window.requestAnimationFrame(tick)
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(tick)
     }
 
     return () => {
-      for (const p of polylineRefs.current) {
-        p.setMap(null)
+      if (animationFrameRef.current) {
+        window.cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
       }
-      polylineRefs.current = []
+
+      for (const p of basePolylineRefs.current) p.setMap(null)
+      for (const p of animPolylineRefs.current) p.setMap(null)
+      basePolylineRefs.current = []
+      animPolylineRefs.current = []
     }
   }, [map, visiblePolylines])
 
