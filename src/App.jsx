@@ -53,7 +53,7 @@ function App() {
 
   useEffect(() => {
     if (pollRef.current) {
-      window.clearInterval(pollRef.current)
+      window.clearTimeout(pollRef.current)
       pollRef.current = null
     }
 
@@ -65,6 +65,8 @@ function App() {
     }
 
     let cancelled = false
+    let inFlight = false
+    let reqToken = 0
 
     ;(async () => {
       try {
@@ -79,24 +81,37 @@ function App() {
     })()
 
     const fetchVehiclesOnce = async () => {
+      if (inFlight) return
+      inFlight = true
+      const token = (reqToken += 1)
       try {
         const vs = await fetchLiveVehicles(
           selectedRoute.routeNo,
           selectedRoute.routeParentId
         )
-        if (!cancelled) setVehicles(vs)
+        if (!cancelled && token === reqToken) setVehicles(vs)
       } catch {
-        if (!cancelled) setVehicles([])
+        if (!cancelled && token === reqToken) setVehicles([])
+      } finally {
+        inFlight = false
       }
     }
 
+    const scheduleNext = () => {
+      if (cancelled) return
+      pollRef.current = window.setTimeout(async () => {
+        await fetchVehiclesOnce()
+        scheduleNext()
+      }, 1000)
+    }
+
     fetchVehiclesOnce()
-    pollRef.current = window.setInterval(fetchVehiclesOnce, 2000)
+    scheduleNext()
 
     return () => {
       cancelled = true
       if (pollRef.current) {
-        window.clearInterval(pollRef.current)
+        window.clearTimeout(pollRef.current)
         pollRef.current = null
       }
     }
