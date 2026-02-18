@@ -1,34 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
+import { APIProvider } from '@vis.gl/react-google-maps'
+import MapView from './components/MapView.jsx'
+
 function App() {
-  const [count, setCount] = useState(0)
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+
+  if (!apiKey) {
+    return (
+      <div className="nb-shell">
+        <header className="nb-topbar">
+          <div className="nb-title">NextBus</div>
+        </header>
+        <main className="nb-content">
+          <div className="nb-error">
+            Missing Google Maps API key. Set <code>VITE_GOOGLE_MAPS_API_KEY</code>
+            in <code>.env</code> and restart the dev server.
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <APIProvider apiKey={apiKey}>
+      <div className="nb-shell">
+        <header className="nb-topbar">
+          <div className="nb-title">NextBus</div>
+        </header>
+
+        <main className="nb-content">
+          <div className="nb-map">
+            <MapView />
+          </div>
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </APIProvider>
   )
 }
 
