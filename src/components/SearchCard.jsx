@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { fetchRouteStops, searchRoutes } from '../api/bmtc.js'
+import SwapIcon from './icons/SwapIcon.jsx'
 
 const SearchMode = {
   PLACES: 'places',
@@ -13,10 +14,8 @@ export default function SearchCard({
   onNearbyClick,
   onFavoritesClick,
   onRouteSelected,
-  isUpVisible = true,
-  isDownVisible = true,
-  onToggleUp = () => {},
-  onToggleDown = () => {},
+  activeDirection = 0,
+  onSwapDirection = () => {},
 }) {
   const [searchMode, setSearchMode] = useState(SearchMode.PLACES)
   const [query, setQuery] = useState('')
@@ -195,24 +194,16 @@ export default function SearchCard({
             {searchMode === SearchMode.ROUTES ? (
               selectedRoute ? (
                 <div className="nb-stops">
-                  <div className="nb-stops__title">{selectedRoute.routeNo}</div>
-
-                  <div className="nb-dir">
+                  <div className="nb-stops__header">
+                    <div className="nb-stops__title">{selectedRoute.routeNo}</div>
                     <button
                       type="button"
-                      className={isUpVisible ? 'nb-dir__btn nb-dir__btn--on' : 'nb-dir__btn'}
-                      onClick={onToggleUp}
+                      className="nb-swap"
+                      onClick={onSwapDirection}
+                      aria-label="Swap direction"
+                      title={activeDirection === 0 ? 'Showing Up route' : 'Showing Down route'}
                     >
-                      Up
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        isDownVisible ? 'nb-dir__btn nb-dir__btn--on' : 'nb-dir__btn'
-                      }
-                      onClick={onToggleDown}
-                    >
-                      Down
+                      <SwapIcon size={24} />
                     </button>
                   </div>
 

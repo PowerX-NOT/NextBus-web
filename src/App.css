@@ -247,6 +247,13 @@
   gap: 10px;
 }
 
+.nb-stops__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .nb-stops__title {
   font-weight: 800;
   font-size: 16px;
@@ -261,22 +268,26 @@
   letter-spacing: 0.8px;
 }
 
-.nb-dir {
-  display: flex;
-  gap: 10px;
-}
-
-.nb-dir__btn {
-  flex: 1;
+.nb-swap {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
-  padding: 10px 12px;
+  width: 44px;
+  height: 40px;
+  padding: 0;
   cursor: pointer;
+  display: grid;
+  place-items: center;
 }
 
-.nb-dir__btn--on {
-  border-color: rgba(122, 162, 255, 0.7);
-  background: rgba(122, 162, 255, 0.18);
+.nb-swap:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.nb-swap:focus,
+.nb-swap:focus-visible,
+.nb-swap:active {
+  outline: none;
+  box-shadow: none;
 }

@@ -14,21 +14,20 @@ function App() {
   const [selectedRoute, setSelectedRoute] = useState(null)
   const [polylines, setPolylines] = useState([])
   const [vehicles, setVehicles] = useState([])
-  const [isUpVisible, setIsUpVisible] = useState(true)
-  const [isDownVisible, setIsDownVisible] = useState(true)
+  const [activeDirection, setActiveDirection] = useState(0)
   const pollRef = useRef(null)
 
   const visiblePolylines = polylines.filter((p) => {
     if (!p) return false
-    if (p.direction === 0) return isUpVisible
-    if (p.direction === 1) return isDownVisible
+    if (p.direction === 0) return activeDirection === 0
+    if (p.direction === 1) return activeDirection === 1
     return true
   })
 
   const visibleVehicles = vehicles.filter((v) => {
     if (!v) return false
-    if (v.direction === 0) return isUpVisible
-    if (v.direction === 1) return isDownVisible
+    if (v.direction === 0) return activeDirection === 0
+    if (v.direction === 1) return activeDirection === 1
     return true
   })
 
@@ -57,8 +56,7 @@ function App() {
     if (!selectedRoute) {
       setPolylines([])
       setVehicles([])
-      setIsUpVisible(true)
-      setIsDownVisible(true)
+      setActiveDirection(0)
       return
     }
 
@@ -119,22 +117,8 @@ function App() {
           onFavoritesClick={() => {}}
           onNearbyClick={() => {}}
           onRouteSelected={setSelectedRoute}
-          isUpVisible={isUpVisible}
-          isDownVisible={isDownVisible}
-          onToggleUp={() => {
-            setIsUpVisible((v) => {
-              const next = !v
-              if (!next && !isDownVisible) return true
-              return next
-            })
-          }}
-          onToggleDown={() => {
-            setIsDownVisible((v) => {
-              const next = !v
-              if (!next && !isUpVisible) return true
-              return next
-            })
-          }}
+          activeDirection={activeDirection}
+          onSwapDirection={() => setActiveDirection((d) => (d === 0 ? 1 : 0))}
         />
       </div>
     </APIProvider>
