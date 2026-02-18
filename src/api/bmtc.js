@@ -1,7 +1,9 @@
-const BASE = '/bmtc'
+const BASE = import.meta.env.VITE_BMTC_PROXY_BASE || '/bmtc'
 
 async function postJson(path, body) {
-  const res = await fetch(`${BASE}${path}`, {
+  const base = String(BASE).replace(/\/+$/, '')
+  const p = String(path).startsWith('/') ? path : `/${path}`
+  const res = await fetch(`${base}${p}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

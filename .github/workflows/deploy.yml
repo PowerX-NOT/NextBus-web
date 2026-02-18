@@ -41,6 +41,10 @@ jobs:
             exit 1
           fi
 
+          if [ -n "${{ secrets.VITE_BMTC_PROXY_BASE }}" ]; then
+            echo "VITE_BMTC_PROXY_BASE=${{ secrets.VITE_BMTC_PROXY_BASE }}" >> .env
+          fi
+
       - name: Install dependencies
         run: npm ci
 
