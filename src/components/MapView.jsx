@@ -98,6 +98,18 @@ function MapOverlays({ polylines, vehicles }) {
     return Array.isArray(polylines) ? polylines : []
   }, [polylines])
 
+  const busIcon = useMemo(() => {
+    const g = window.google?.maps
+    if (!g?.Size || !g?.Point) return undefined
+
+    const size = 40
+    return {
+      url: '/bus.svg',
+      scaledSize: new g.Size(size, size),
+      anchor: new g.Point(size / 2, size),
+    }
+  }, [map])
+
   const distanceMeters = (a, b) => {
     const R = 6371000
     const toRad = (d) => (d * Math.PI) / 180
@@ -256,6 +268,7 @@ function MapOverlays({ polylines, vehicles }) {
           <Marker
             key={`${v.vehicleId ?? v.vehicleNumber ?? 'v'}:${idx}`}
             position={v.location}
+            icon={busIcon}
           />
         ))
     : null
